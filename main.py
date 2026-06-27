@@ -155,6 +155,20 @@ def visualize_samples(X, y, num_images=NUM_SAMPLE_IMAGES):
     plt.show()
 
 
+# ============================================================
+# NEURAL NETWORK
+# ============================================================
+
+class NeuralNetwork:
+    """
+    Fully Connected Neural Network for MNIST Classification.
+    """
+    def __init__(self):
+        """
+        Initialize the neural network.
+        """
+        pass
+
 
 
 # ============================================================
@@ -168,6 +182,9 @@ def main():
     y_one_hot = one_hot_encode(y_labels)
     X_train, X_val, y_train, y_val, y_train_labels, y_val_labels  = train_validation_split(X_train,y_labels,y_one_hot)
     visualize_samples(X_train, y_train_labels)
+    model = NeuralNetwork()
+
+    print("Neural Network object created successfully.")
 
 if __name__ == "__main__":
     main()
