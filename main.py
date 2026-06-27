@@ -22,7 +22,6 @@ np.random.seed(RANDOM_SEED)
 
 
 # NETWORK ARCHITECTURE
-
 INPUT_SIZE = 784
 
 HIDDEN1_SIZE = 512
@@ -33,7 +32,6 @@ OUTPUT_SIZE = 10
 
 
 # DATA PREPROCESSING
-
 def load_data():
     """
     Loads the training and testing datasets.
@@ -159,7 +157,6 @@ def visualize_samples(X, y, num_images=NUM_SAMPLE_IMAGES):
 
 
 # NEURAL NETWORK
-
 class NeuralNetwork:
     """
     Fully Connected Neural Network for MNIST Classification.
@@ -209,10 +206,20 @@ class NeuralNetwork:
         """
         return np.maximum(0, x)
 
+    def softmax(self, x):
+        """
+        Apply the Softmax activation function.
+        """
+        #numerical stability
+        x = x-np.max(x, axis=1, keepdims=True)
+        exp_vaslues = np.exp(x)
+        probabilities = exp_vaslues / np.sum(exp_vaslues, axis=1, keepdims=True)
+        return probabilities
+
+
 
 
 # MAIN
-
 def main():
     train_df, test_df = load_data()
     X_train, y_labels, X_test = preprocess_data(train_df, test_df)
@@ -224,10 +231,24 @@ def main():
     model = NeuralNetwork()
     print("Neural Network object created successfully.\n")
 
-    test_input = np.array([-5, -2, 0, 3, 8])
-    print("Testing ReLU\n")
-    print("Input :", test_input)
-    print("Output:", model.relu(test_input))
+    test_input = np.array([[2.0, 1.0, 0.1]])
+    #print("Testing ReLU\n")
+    #print("Input :", test_input)
+    #print("Output:", model.relu(test_input))
+
+    softmax_output = model.softmax(test_input)
+
+    assert np.all(softmax_output >= 0), \
+        "Softmax produced negative probabilities."
+    assert np.all(softmax_output <= 1), \
+        "Softmax probabilities exceed 1."
+    assert np.allclose(np.sum(softmax_output, axis=1), 1.0), \
+        "Softmax probabilities do not sum to 1."
+
+    print("Testing Softmax")
+    print("Input:\n", test_input)
+    print("\nOutput:\n", softmax_output)
+    print("\nRow Sum:", np.sum(softmax_output))
 
 if __name__ == "__main__":
     main()
