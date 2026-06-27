@@ -203,6 +203,12 @@ class NeuralNetwork:
         print(f"W3 Shape : {self.W3.shape}")
         print(f"b3 Shape : {self.b3.shape}")
 
+    def relu(self, x):
+        """
+            Apply the ReLU activation function.
+        """
+        return np.maximum(0, x)
+
 
 
 # MAIN
@@ -214,9 +220,14 @@ def main():
     y_one_hot = one_hot_encode(y_labels)
     X_train, X_val, y_train, y_val, y_train_labels, y_val_labels  = train_validation_split(X_train,y_labels,y_one_hot)
     visualize_samples(X_train, y_train_labels)
-    model = NeuralNetwork()
 
-    print("Neural Network object created successfully.")
+    model = NeuralNetwork()
+    print("Neural Network object created successfully.\n")
+
+    test_input = np.array([-5, -2, 0, 3, 8])
+    print("Testing ReLU\n")
+    print("Input :", test_input)
+    print("Output:", model.relu(test_input))
 
 if __name__ == "__main__":
     main()
