@@ -1,16 +1,10 @@
-# ============================================================
 # IMPORTS
-# ============================================================
-
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
 
-# ============================================================
 # CONFIGURATION
-# ============================================================
-
 # file paths
 TRAIN_PATH = "data/competition_train.csv"
 TEST_PATH = "data/competition_test.csv"
@@ -27,16 +21,25 @@ NUM_SAMPLE_IMAGES = 10
 np.random.seed(RANDOM_SEED)
 
 
-# ============================================================
+# NETWORK ARCHITECTURE
+
+INPUT_SIZE = 784
+
+HIDDEN1_SIZE = 512
+
+HIDDEN2_SIZE = 512
+
+OUTPUT_SIZE = 10
+
+
 # DATA PREPROCESSING
-# ============================================================
 
 def load_data():
     """
-        Loads the training and testing datasets.
-        Returns:
-            train_df (DataFrame): Training dataset
-            test_df (DataFrame): Testing dataset
+    Loads the training and testing datasets.
+    Returns:
+        train_df (DataFrame): Training dataset
+        test_df (DataFrame): Testing dataset
     """
     print("Loading datasets...\n")
 
@@ -50,11 +53,11 @@ def load_data():
 
 def preprocess_data(train_df, test_df):
     """
-        Separates features and labels from the datasets.
-        Returns:
-            X_train
-            y_train
-            X_test
+    Separates features and labels from the datasets.
+    Returns:
+        X_train
+        y_train
+        X_test
     """
     #extract labels
     y_train = train_df["label"].to_numpy()
@@ -77,7 +80,7 @@ def preprocess_data(train_df, test_df):
 
 def normalise_data(X_train, X_test):
     """
-       Normalize pixel values from [0,255] to [0,1].
+    Normalize pixel values from [0,255] to [0,1].
     """
     X_train = X_train.astype(np.float32)/255.0
     X_test = X_test.astype(np.float32)/255.0
@@ -113,7 +116,7 @@ def one_hot_encode(y, num_classes=10):
 
 def train_validation_split(X, y_labels, y_one_hot, validation_split=VALIDATION_SPLIT):
     """
-        Shuffle the dataset and split it into training and validation sets while keeping labels synchronized.
+    Shuffle the dataset and split it into training and validation sets while keeping labels synchronized.
     """
     num_samples = X.shape[0]
     indices = np.random.permutation(num_samples)
@@ -141,7 +144,7 @@ def train_validation_split(X, y_labels, y_one_hot, validation_split=VALIDATION_S
 
 def visualize_samples(X, y, num_images=NUM_SAMPLE_IMAGES):
     """
-        Display sample handwritten digits with their labels.
+    Display sample handwritten digits with their labels.
     """
     plt.figure(figsize=(12, 5))
 
@@ -155,9 +158,7 @@ def visualize_samples(X, y, num_images=NUM_SAMPLE_IMAGES):
     plt.show()
 
 
-# ============================================================
 # NEURAL NETWORK
-# ============================================================
 
 class NeuralNetwork:
     """
@@ -167,13 +168,44 @@ class NeuralNetwork:
         """
         Initialize the neural network.
         """
-        pass
+        self._initialize_weights()
+
+    def _initialize_weights(self):
+        """
+        Initialize weights using He Initialization.
+        """
+        self.W1 = np.random.randn(INPUT_SIZE, HIDDEN1_SIZE) * np.sqrt(2 / INPUT_SIZE)
+        self.b1 = np.zeros((1,HIDDEN1_SIZE))
+
+        self.W2 = np.random.randn(HIDDEN1_SIZE, HIDDEN2_SIZE ) * np.sqrt(2 / HIDDEN1_SIZE)
+        self.b2 = np.zeros((1, HIDDEN2_SIZE))
+
+        self.W3 = np.random.randn(HIDDEN2_SIZE, OUTPUT_SIZE) * np.sqrt(2 / HIDDEN2_SIZE)
+        self.b3 = np.zeros((1, OUTPUT_SIZE))
+
+        assert self.W1.shape == (INPUT_SIZE, HIDDEN1_SIZE)
+        assert self.b1.shape == (1, HIDDEN1_SIZE)
+
+        assert self.W2.shape == (HIDDEN1_SIZE, HIDDEN2_SIZE)
+        assert self.b2.shape == (1, HIDDEN2_SIZE)
+
+        assert self.W3.shape == (HIDDEN2_SIZE, OUTPUT_SIZE)
+        assert self.b3.shape == (1, OUTPUT_SIZE)
+
+        print("\nHe Weight Initialization Complete.\n")
+
+        print(f"W1 Shape : {self.W1.shape}")
+        print(f"b1 Shape : {self.b1.shape}")
+
+        print(f"W2 Shape : {self.W2.shape}")
+        print(f"b2 Shape : {self.b2.shape}")
+
+        print(f"W3 Shape : {self.W3.shape}")
+        print(f"b3 Shape : {self.b3.shape}")
 
 
 
-# ============================================================
 # MAIN
-# ============================================================
 
 def main():
     train_df, test_df = load_data()
