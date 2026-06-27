@@ -1,0 +1,173 @@
+# ============================================================
+# IMPORTS
+# ============================================================
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+
+# ============================================================
+# CONFIGURATION
+# ============================================================
+
+# file paths
+TRAIN_PATH = "data/competition_train.csv"
+TEST_PATH = "data/competition_test.csv"
+SUBMISSION_PATH = "data/competition_submission.csv"
+
+#random seed
+RANDOM_SEED = 42
+
+#dataset split
+VALIDATION_SPLIT = 0.1
+
+#visualisation
+NUM_SAMPLE_IMAGES = 10
+np.random.seed(RANDOM_SEED)
+
+
+# ============================================================
+# DATA PREPROCESSING
+# ============================================================
+
+def load_data():
+    """
+        Loads the training and testing datasets.
+        Returns:
+            train_df (DataFrame): Training dataset
+            test_df (DataFrame): Testing dataset
+    """
+    print("Loading datasets...\n")
+
+    train_df = pd.read_csv(TRAIN_PATH)
+    test_df = pd.read_csv(TEST_PATH)
+
+    print(f"training dataset shape: {train_df.shape}")
+    print(f"testing dataset shape: {test_df.shape}")
+
+    return train_df, test_df
+
+def preprocess_data(train_df, test_df):
+    """
+        Separates features and labels from the datasets.
+        Returns:
+            X_train
+            y_train
+            X_test
+    """
+    #extract labels
+    y_train = train_df["label"].to_numpy()
+    #remove ImageId and label from training data
+    X_train = train_df.drop(columns=['ImageId', 'label']).to_numpy()
+    #remove ImageId from test
+    X_test = test_df.drop(columns=['ImageId']).to_numpy()
+
+    print("data preprocessing cmpleted.\n")
+    print(f"training features shape: {X_train.shape}")
+    print(f"training labels shape: {y_train.shape}")
+    print(f"testing features shape: {X_test.shape}")
+
+    assert X_train.shape[1] == 784, "Training data must have 784 features."
+    assert X_test.shape[1] == 784, "Testing data must have 784 features."
+    assert len(X_train) == len(y_train), \
+        "Features and labels have different lengths."
+
+    return X_train, y_train, X_test
+
+def normalise_data(X_train, X_test):
+    """
+       Normalize pixel values from [0,255] to [0,1].
+    """
+    X_train = X_train.astype(np.float32)/255.0
+    X_test = X_test.astype(np.float32)/255.0
+
+    assert X_train.min() >= 0.0 and X_train.max() <= 1.0, \
+        "Training pixels are not normalized."
+    assert X_test.min() >= 0.0 and X_test.max() <= 1.0, \
+        "Testing pixels are not normalized."
+
+    print("\nNormalizing data...\n")
+    print(f"training pixel range: {X_train.min():.3f}, {X_train.max():.3f}")
+    print(f"testing pixel range: {X_test.min():.3f}, {X_test.max():.3f}\n")
+
+    return X_train, X_test
+
+def one_hot_encode(y, num_classes=10):
+    """
+    convert integer variables to one-hot encoded variables.
+    """
+    one_hot = np.zeros((len(y), num_classes), dtype=np.float32)
+    one_hot[np.arange(len(y)), y] = 1
+
+    assert one_hot.shape == (len(y), num_classes), \
+        "Incorrect one-hot encoding shape."
+    assert np.all(one_hot.sum(axis=1) == 1), \
+        "Each one-hot vector must contain exactly one 1."
+
+    print("One-Hot Encoding\n")
+    print(f"Label Shape: {y.shape}")
+    print(f"Encoded Shape: {one_hot.shape}\n")
+
+    return one_hot
+
+def train_validation_split(X, y_labels, y_one_hot, validation_split=VALIDATION_SPLIT):
+    """
+        Shuffle the dataset and split it into training and validation sets while keeping labels synchronized.
+    """
+    num_samples = X.shape[0]
+    indices = np.random.permutation(num_samples)
+    X = X[indices]
+    y_labels = y_labels[indices]
+    y_one_hot = y_one_hot[indices]
+    split_index = int(num_samples * (1 - validation_split))
+    X_train = X[:split_index]
+    X_val = X[split_index:]
+    y_train_labels = y_labels[:split_index]
+    y_val_labels = y_labels[split_index:]
+    y_train = y_one_hot[:split_index]
+    y_val = y_one_hot[split_index:]
+
+    assert X_train.shape[0] == y_train.shape[0], \
+        "Training features and labels do not match."
+    assert X_val.shape[0] == y_val.shape[0], \
+        "Validation features and labels do not match."
+
+    print("Train / Validation Split\n")
+    print(f"Training Samples   : {len(X_train)}")
+    print(f"Validation Samples : {len(X_val)}\n")
+
+    return X_train, X_val,y_train, y_val, y_train_labels, y_val_labels
+
+def visualize_samples(X, y, num_images=NUM_SAMPLE_IMAGES):
+    """
+        Display sample handwritten digits with their labels.
+    """
+    plt.figure(figsize=(12, 5))
+
+    for i in range(num_images):
+        plt.subplot(2, 5, i + 1)
+        plt.imshow(X[i].reshape(28, 28), cmap="gray")
+        plt.title(f"Digit: {y[i]}", fontsize=10)
+        plt.axis("off")
+
+    plt.tight_layout()
+    plt.show()
+
+
+
+
+# ============================================================
+# MAIN
+# ============================================================
+
+def main():
+    train_df, test_df = load_data()
+    X_train, y_labels, X_test = preprocess_data(train_df, test_df)
+    X_train, X_test = normalise_data(X_train, X_test)
+    y_one_hot = one_hot_encode(y_labels)
+    X_train, X_val, y_train, y_val, y_train_labels, y_val_labels  = train_validation_split(X_train,y_labels,y_one_hot)
+    visualize_samples(X_train, y_train_labels)
+
+if __name__ == "__main__":
+    main()
