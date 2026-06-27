@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual Environment
+venv/
+.venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+
+# Operating System
+.DS_Store
+Thumbs.db
+
+# Python Cache
+.pytest_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Generated plots
+plots/
+
+# Generated submissions
+submissions/
+
+# Model checkpoints
+*.npz
+
+# Logs
+*.log
+
+# Dataset
+data/
+
+# Ignore model weights
+*.npz
+*.npy
