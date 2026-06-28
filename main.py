@@ -33,6 +33,8 @@ BETA1 = 0.9
 BETA2 = 0.999
 EPSILON = 1e-8
 
+BATCH_SIZE = 64
+
 
 # DATA PREPROCESSING
 def load_data():
@@ -204,6 +206,7 @@ class NeuralNetwork:
         print(f"W3 Shape : {self.W3.shape}")
         print(f"b3 Shape : {self.b3.shape}")
         """
+
     def _initialise_adam(self):
         """
         Initialise Adam optimiser state
@@ -397,6 +400,30 @@ class NeuralNetwork:
         assert np.all(np.isfinite(self.b2))
         assert np.all(np.isfinite(self.b3))
 
+    # MINI-BATCH GENERATION
+    def create_mini_batches(self, X, y):
+        """
+        Shuffel the training data and split into mini batches.
+        """
+        indices = np.random.permutation(X.shape[0])
+        X_shuffled = X[indices]
+        y_shuffled = y[indices]
+        mini_batches = []
+
+        for start in range(0, X.shape[0], BATCH_SIZE):
+            end = start + BATCH_SIZE
+            X_batch = X_shuffled[start:end]
+            y_batch = y_shuffled[start:end]
+            mini_batches.append((X_batch, y_batch))
+
+        assert len(mini_batches) > 0, \
+            "No mini-batches were created."
+        for X_batch, y_batch in mini_batches:
+            assert X_batch.shape[0] == y_batch.shape[0], \
+                "Batch size mismatch between X and y."
+
+        return mini_batches
+
 
 
 
@@ -497,7 +524,7 @@ def main():
     print("mW1 Mean:", np.mean(model.mW1))
     print("\nTime Step:", model.t)
     """
-
+    """
     print("Testing Adam Optimizer\n")
     test_batch = X_train[:5]
     test_labels = y_train[:5]
@@ -509,7 +536,16 @@ def main():
     print("Weights Changed:",
           not np.array_equal(weight_before, weight_after))
     print("Time Step:", model.t)
+    """
 
+    print("Testing Mini-Batch Generation\n")
+    mini_batches = model.create_mini_batches(X_train, y_train)
+    print("Number of Mini-Batches:", len(mini_batches))
+    X_batch, y_batch = mini_batches[0]
+    print("First Batch X Shape:", X_batch.shape)
+    print("First Batch y Shape:", y_batch.shape)
+    print("Expected Batch Size:", BATCH_SIZE)
+    print("Actual Batch Size:", X_batch.shape[0])
 
 if __name__ == "__main__":
     main()
