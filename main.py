@@ -424,6 +424,28 @@ class NeuralNetwork:
 
         return mini_batches
 
+    # PREDICTION & EVALUATION
+    def predict(self, X):
+        """
+        Predict class labels for input data
+        """
+        probabilities = self.forward(X)
+        predictions = np.argmax(probabilities, axis=1)
+
+        return predictions
+
+    def compute_accuracy(self, y_true, predictions):
+        """
+        Compute classification accuracy.
+        """
+        true_labels = np.argmax(y_true, axis=1)
+        accuracy = np.mean(predictions == true_labels)
+
+        assert np.isscalar(accuracy)
+        assert 0.0 <= accuracy <= 1.0
+
+        return accuracy
+
 
 
 
@@ -436,7 +458,7 @@ def main():
     X_train, X_test = normalise_data(X_train, X_test)
     y_one_hot = one_hot_encode(y_labels)
     X_train, X_val, y_train, y_val, y_train_labels, y_val_labels  = train_validation_split(X_train,y_labels,y_one_hot)
-    visualize_samples(X_train, y_train_labels)
+    #visualize_samples(X_train, y_train_labels)
 
     model = NeuralNetwork()
     print("Neural Network object created successfully.\n")
@@ -537,7 +559,7 @@ def main():
           not np.array_equal(weight_before, weight_after))
     print("Time Step:", model.t)
     """
-
+    """
     print("Testing Mini-Batch Generation\n")
     mini_batches = model.create_mini_batches(X_train, y_train)
     print("Number of Mini-Batches:", len(mini_batches))
@@ -546,6 +568,16 @@ def main():
     print("First Batch y Shape:", y_batch.shape)
     print("Expected Batch Size:", BATCH_SIZE)
     print("Actual Batch Size:", X_batch.shape[0])
+    """
 
+    print("Testing Prediction & Accuracy\n")
+    test_batch = X_train[:10]
+    test_labels = y_train[:10]
+    predictions = model.predict(test_batch)
+    accuracy = model.compute_accuracy(test_labels, predictions)
+    print("Predictions:")
+    print(predictions)
+    print("\nPrediction Shape:", predictions.shape)
+    print(f"\nAccuracy: {accuracy:.4f}")
 if __name__ == "__main__":
     main()
