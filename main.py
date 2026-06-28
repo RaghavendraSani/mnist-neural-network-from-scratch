@@ -349,6 +349,13 @@ class NeuralNetwork:
         assert self.dW1.shape == self.W1.shape
         assert self.db1.shape == self.b1.shape
 
+        self.dW1 = np.clip(self.dW1, -CLIP_VALUE, CLIP_VALUE)
+        self.db1 = np.clip(self.db1, -CLIP_VALUE, CLIP_VALUE)
+        self.dW2 = np.clip(self.dW2, -CLIP_VALUE, CLIP_VALUE)
+        self.db2 = np.clip(self.db2, -CLIP_VALUE, CLIP_VALUE)
+        self.dW3 = np.clip(self.dW3, -CLIP_VALUE, CLIP_VALUE)
+        self.db3 = np.clip(self.db3, -CLIP_VALUE, CLIP_VALUE)
+
     # OPTIMISER
     def update_parameters(self):
         """
