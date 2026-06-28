@@ -34,6 +34,14 @@ BETA2 = 0.999
 EPSILON = 1e-8
 
 BATCH_SIZE = 64
+EPOCHS = 30
+BATCH_SIZE = 64
+LEARNING_RATE = 0.001
+L2_LAMBDA = 1e-4
+CLIP_VALUE = 5.0
+LR_DECAY = 0.5
+LR_PATIENCE = 3
+EARLY_STOPPING_PATIENCE = 6
 
 
 # DATA PREPROCESSING
@@ -468,6 +476,87 @@ class NeuralNetwork:
 
         return loss
 
+    def train_one_epoch(self, X_train, y_train):
+        mini_batches = self.create_mini_batches(X_train, y_train)
+        epoch_loss = 0.0
+        epoch_correct = 0
+        total_samples = 0
+
+        for X_batch, y_batch in mini_batches:
+            loss = self.train_one_batch(X_batch, y_batch)
+            predictions = self.predict(X_batch)
+            epoch_loss += loss
+            epoch_correct += np.sum(
+                predictions == np.argmax(y_batch, axis=1)
+            )
+            total_samples += X_batch.shape[0]
+
+        average_loss = epoch_loss / len(mini_batches)
+        accuracy = epoch_correct / total_samples
+
+        return average_loss, accuracy
+
+    def train(self, X_train, y_train, X_val, y_val):
+        best_validation_accuracy = 0.0
+        patience_counter = 0
+
+        for epoch in range(EPOCHS):
+            train_loss, train_accuracy = self.train_one_epoch(X_train, y_train)
+            validation_predictions = self.predict(X_val)
+            validation_accuracy = self.compute_accuracy(
+                y_val,
+                validation_predictions
+            )
+            validation_loss = self.compute_loss(
+                y_val,
+                self.forward(X_val)
+            )
+
+            print(
+                f"Epoch {epoch + 1}/{EPOCHS} | "
+                f"Train Loss: {train_loss:.4f} | "
+                f"Train Acc: {train_accuracy:.4f} | "
+                f"Val Loss: {validation_loss:.4f} | "
+                f"Val Acc: {validation_accuracy:.4f}"
+            )
+
+            self.train_loss_history.append(train_loss)
+            self.validation_loss_history.append(validation_loss)
+            self.train_accuracy_history.append(train_accuracy)
+            self.validation_accuracy_history.append(validation_accuracy)
+
+            #Best Model
+            if validation_accuracy > best_validation_accuracy:
+                best_validation_accuracy = validation_accuracy
+                patience_counter = 0
+                self.best_W1 = self.W1.copy()
+                self.best_b1 = self.b1.copy()
+                self.best_W2 = self.W2.copy()
+                self.best_b2 = self.b2.copy()
+                self.best_W3 = self.W3.copy()
+                self.best_b3 = self.b3.copy()
+            else:
+                patience_counter += 1
+
+            #Learning Rate
+            if patience_counter >= LR_PATIENCE:
+                self.learning_rate *= LR_DECAY
+                print(f"Learning rate reduced to {self.learning_rate}")
+                patience_counter = 0
+
+            #Early Stopping
+            if patience_counter >= EARLY_STOPPING_PATIENCE:
+                print("Early stopping triggered.")
+                break
+
+        # Restore Best Model
+        self.W1 = self.best_W1
+        self.b1 = self.best_b1
+        self.W2 = self.best_W2
+        self.b2 = self.best_b2
+        self.W3 = self.best_W3
+        self.b3 = self.best_b3
+
 
 
 
@@ -602,7 +691,7 @@ def main():
     print("\nPrediction Shape:", predictions.shape)
     print(f"\nAccuracy: {accuracy:.4f}")
     """
-
+    """
     print("Testing Train One Batch\n")
     test_batch = X_train[:BATCH_SIZE]
     test_labels = y_train[:BATCH_SIZE]
@@ -613,6 +702,11 @@ def main():
     print()
     print("Weights Updated:",
           not np.array_equal(weight_before, weight_after))
+    """
 
+    print("Testing One Epoch\n")
+    loss, accuracy = model.train_one_epoch(X_train, y_train)
+    print(f"Loss: {loss:.6f}")
+    print(f"Accuracy: {accuracy:.4f}")
 if __name__ == "__main__":
     main()
