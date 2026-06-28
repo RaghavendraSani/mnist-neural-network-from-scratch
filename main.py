@@ -170,6 +170,13 @@ class NeuralNetwork:
         """
         self._initialize_weights()
         self._initialise_adam()
+        self.learning_rate = LEARNING_RATE
+
+        #training history
+        self.train_loss_history = []
+        self.validation_loss_history = []
+        self.train_accuracy_history = []
+        self.validation_accuracy_history = []
 
     def _initialize_weights(self):
         """
@@ -210,34 +217,34 @@ class NeuralNetwork:
         """
         #first moment estimates
         self.mW1 = np.zeros_like(self.W1)
-        self.mW2 = np.zeros_like(self.W2)
-        self.mW3 = np.zeros_like(self.W3)
         self.mb1 = np.zeros_like(self.b1)
+        self.mW2 = np.zeros_like(self.W2)
         self.mb2 = np.zeros_like(self.b2)
+        self.mW3 = np.zeros_like(self.W3)
         self.mb3 = np.zeros_like(self.b3)
 
         #second moment estimates
         self.vW1 = np.zeros_like(self.W1)
-        self.vW2 = np.zeros_like(self.W2)
-        self.vW3 = np.zeros_like(self.W3)
         self.vb1 = np.zeros_like(self.b1)
+        self.vW2 = np.zeros_like(self.W2)
         self.vb2 = np.zeros_like(self.b2)
+        self.vW3 = np.zeros_like(self.W3)
         self.vb3 = np.zeros_like(self.b3)
 
         #time step
         self.t = 0
 
         assert self.mW1.shape == self.W1.shape
-        assert self.mW2.shape == self.W2.shape
-        assert self.mW3.shape == self.W3.shape
         assert self.mb1.shape == self.b1.shape
+        assert self.mW2.shape == self.W2.shape
         assert self.mb2.shape == self.b2.shape
+        assert self.mW3.shape == self.W3.shape
         assert self.mb3.shape == self.b3.shape
         assert self.vW1.shape == self.W1.shape
-        assert self.vW2.shape == self.W2.shape
-        assert self.vW3.shape == self.W3.shape
         assert self.vb1.shape == self.b1.shape
+        assert self.vW2.shape == self.W2.shape
         assert self.vb2.shape == self.b2.shape
+        assert self.vW3.shape == self.W3.shape
         assert self.vb3.shape == self.b3.shape
 
 
@@ -338,6 +345,27 @@ class NeuralNetwork:
         assert self.dW1.shape == self.W1.shape
         assert self.db1.shape == self.b1.shape
 
+    # OPTIMISER
+    def update_parameters(self):
+        """
+        Update network parameters using Adam optimiser
+        """
+        self.t += 1
+
+        #first moments updates (momentum)
+        self.mW1 = BETA1 * self.mW1 + (1 - BETA1) * self.dW1
+        self.mb1 = BETA1 * self.mb1 + (1 - BETA1) * self.db1
+        self.mW2 = BETA1 * self.mW2 + (1 - BETA1) * self.dW2
+        self.mb2 = BETA1 * self.mb2 + (1 - BETA1) * self.db2
+        self.mW3 = BETA1 * self.mW3 + (1 - BETA1) * self.dW3
+        self.mb3 = BETA1 * self.mb3 + (1 - BETA1) * self.db3
+
+        assert self.mW1.shape == self.W1.shape
+        assert self.mb1.shape == self.b1.shape
+        assert self.mW2.shape == self.W2.shape
+        assert self.mb2.shape == self.b2.shape
+        assert self.mW3.shape == self.W3.shape
+        assert self.mb3.shape == self.b3.shape
 
 
 
@@ -416,7 +444,7 @@ def main():
     print("dW1 Shape :", model.dW1.shape)
     print("db1 Shape :", model.db1.shape)
     """
-
+    """
     print("Testing Adam Initialization\n")
     print("mW1 Shape:", model.mW1.shape)
     print("vW1 Shape:", model.vW1.shape)
@@ -425,7 +453,19 @@ def main():
     print("mW3 Shape:", model.mW3.shape)
     print("vW3 Shape:", model.vW3.shape)
     print("\nTime Step:", model.t)
+    """
 
+    print("Testing Adam Momentum Update\n")
+    test_batch = X_train[:5]
+    test_labels = y_train[:5]
+    model.forward(test_batch)
+    model.backward(test_labels)
+    print("Before Update")
+    print("mW1 Mean:", np.mean(model.mW1))
+    model.update_parameters()
+    print("\nAfter Update")
+    print("mW1 Mean:", np.mean(model.mW1))
+    print("\nTime Step:", model.t)
 
 if __name__ == "__main__":
     main()
