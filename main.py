@@ -23,8 +23,8 @@ np.random.seed(RANDOM_SEED)
 
 # NETWORK ARCHITECTURE
 INPUT_SIZE = 784
-HIDDEN1_SIZE = 512
-HIDDEN2_SIZE = 512
+HIDDEN1_SIZE = 256
+HIDDEN2_SIZE = 128
 OUTPUT_SIZE = 10
 
 # OPTIMISER
@@ -34,10 +34,8 @@ BETA2 = 0.999
 EPSILON = 1e-8
 
 BATCH_SIZE = 64
-EPOCHS = 30
-BATCH_SIZE = 64
-LEARNING_RATE = 0.001
-L2_LAMBDA = 1e-4
+EPOCHS = 10
+L2_LAMBDA = 5e-4
 CLIP_VALUE = 5.0
 LR_DECAY = 0.5
 LR_PATIENCE = 3
@@ -305,7 +303,7 @@ class NeuralNetwork:
         y_pred = np.clip(y_pred, 1e-15, 1 - 1e-15)
         cross_entropy = -np.sum(y_true * np.log(y_pred)) / y_true.shape[0]
         l2_loss = (np.sum(self.W1 ** 2) + np.sum(self.W2 ** 2) + np.sum(self.W3 ** 2))
-        loss = cross_entropy + L2_LAMBDA * l2_loss
+        loss = cross_entropy + (L2_LAMBDA / (2 * y_true.shape[0])) * l2_loss
 
         assert np.isscalar(loss), \
             "Loss should be a scalar."
@@ -322,7 +320,7 @@ class NeuralNetwork:
         #output layer
         batch_size = y_true.shape[0]
         self.dZ3 = self.A3 - y_true
-        self.dW3 = np.dot(self.A2.T, self.dZ3) / batch_size
+        self.dW3 = (np.dot(self.A2.T, self.dZ3) / batch_size + (L2_LAMBDA / batch_size) * self.W3)
         self.db3 = np.sum(self.dZ3, axis=0, keepdims=True) / batch_size
 
         assert self.dZ3.shape == self.A3.shape
@@ -332,7 +330,7 @@ class NeuralNetwork:
         #hidden layer 2
         self.dA2 = np.dot(self.dZ3, self.W3.T)
         self.dZ2 = self.dA2 * (self.Z2 > 0)
-        self.dW2 = np.dot(self.A1.T, self.dZ2) / batch_size
+        self.dW2 = (np.dot(self.A1.T, self.dZ2) / batch_size + (L2_LAMBDA / batch_size) * self.W2)
         self.db2 = np.sum(self.dZ2, axis=0, keepdims=True) / batch_size
 
         assert self.dA2.shape == self.A2.shape
@@ -343,7 +341,7 @@ class NeuralNetwork:
         #hidden layer 1
         self.dA1 = np.dot(self.dZ2, self.W2.T)
         self.dZ1 = self.dA1 * (self.Z1 > 0)
-        self.dW1 = np.dot(self.X.T, self.dZ1) / batch_size
+        self.dW1 = (np.dot(self.X.T, self.dZ1) / batch_size + (L2_LAMBDA / batch_size) * self.W1)
         self.db1 = np.sum(self.dZ1, axis=0, keepdims=True) / batch_size
 
         assert self.dA1.shape == self.A1.shape
@@ -507,26 +505,23 @@ class NeuralNetwork:
 
     def train(self, X_train, y_train, X_val, y_val):
         best_validation_accuracy = 0.0
-        patience_counter = 0
+        lr_counter = 0
+        early_stop_counter = 0
 
         for epoch in range(EPOCHS):
             train_loss, train_accuracy = self.train_one_epoch(X_train, y_train)
-            validation_predictions = self.predict(X_val)
-            validation_accuracy = self.compute_accuracy(
-                y_val,
-                validation_predictions
-            )
-            validation_loss = self.compute_loss(
-                y_val,
-                self.forward(X_val)
-            )
+            validation_output = self.forward(X_val)
+            validation_predictions = np.argmax(validation_output, axis=1)
+            validation_accuracy = self.compute_accuracy(y_val, validation_predictions)
+            validation_loss = self.compute_loss(y_val, validation_output)
 
             print(
                 f"Epoch {epoch + 1}/{EPOCHS} | "
                 f"Train Loss: {train_loss:.4f} | "
                 f"Train Acc: {train_accuracy:.4f} | "
                 f"Val Loss: {validation_loss:.4f} | "
-                f"Val Acc: {validation_accuracy:.4f}"
+                f"Val Acc: {validation_accuracy:.4f} | "
+                f"LR: {self.learning_rate:.6f}"
             )
 
             self.train_loss_history.append(train_loss)
@@ -537,24 +532,28 @@ class NeuralNetwork:
             #Best Model
             if validation_accuracy > best_validation_accuracy:
                 best_validation_accuracy = validation_accuracy
-                patience_counter = 0
+                lr_counter = 0
+                early_stop_counter = 0
                 self.best_W1 = self.W1.copy()
                 self.best_b1 = self.b1.copy()
                 self.best_W2 = self.W2.copy()
                 self.best_b2 = self.b2.copy()
                 self.best_W3 = self.W3.copy()
                 self.best_b3 = self.b3.copy()
+                self.best_learning_rate = self.learning_rate
+                self.best_t = self.t
             else:
-                patience_counter += 1
+                lr_counter += 1
+                early_stop_counter += 1
 
             #Learning Rate
-            if patience_counter >= LR_PATIENCE:
+            if lr_counter >= LR_PATIENCE:
                 self.learning_rate *= LR_DECAY
                 print(f"Learning rate reduced to {self.learning_rate}")
-                patience_counter = 0
+                lr_counter = 0
 
             #Early Stopping
-            if patience_counter >= EARLY_STOPPING_PATIENCE:
+            if early_stop_counter >= EARLY_STOPPING_PATIENCE:
                 print("Early stopping triggered.")
                 break
 
@@ -565,6 +564,20 @@ class NeuralNetwork:
         self.b2 = self.best_b2
         self.W3 = self.best_W3
         self.b3 = self.best_b3
+        self.learning_rate = self.best_learning_rate
+        self.t = self.best_t
+
+    def generate_submission(self, X_test, submission_path):
+        """
+        Generate Kaggle submission file.
+        """
+        predictions = self.predict(X_test)
+        submission = pd.DataFrame({
+            "ImageId": np.arange(1, len(predictions) + 1),
+            "Label": predictions
+        })
+        submission.to_csv(submission_path, index=False)
+        print(f"\nSubmission saved to: {submission_path}")
 
 
 
@@ -579,9 +592,6 @@ def main():
     y_one_hot = one_hot_encode(y_labels)
     X_train, X_val, y_train, y_val, y_train_labels, y_val_labels  = train_validation_split(X_train,y_labels,y_one_hot)
     #visualize_samples(X_train, y_train_labels)
-
-    model = NeuralNetwork()
-    print("Neural Network object created successfully.\n")
 
     """"
     test_input = np.array([[2.0, 1.0, 0.1]])
@@ -712,10 +722,18 @@ def main():
     print("Weights Updated:",
           not np.array_equal(weight_before, weight_after))
     """
-
+    """
     print("Testing One Epoch\n")
     loss, accuracy = model.train_one_epoch(X_train, y_train)
     print(f"Loss: {loss:.6f}")
     print(f"Accuracy: {accuracy:.4f}")
+    """
+
+    model = NeuralNetwork()
+    print("Neural Network object created successfully.\n")
+    print("Training Started...\n")
+    model.train(X_train, y_train, X_val, y_val)
+    model.generate_submission(X_test, SUBMISSION_PATH)
+
 if __name__ == "__main__":
     main()
