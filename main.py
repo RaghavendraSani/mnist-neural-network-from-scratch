@@ -257,10 +257,11 @@ class NeuralNetwork:
         return loss
 
     # BACKPROPAGATION
-    def backward_output_layer(self, y_true):
+    def backward(self, y_true):
         """
         Compute gradient of the output layer.
         """
+        #output layer
         batch_size = y_true.shape[0]
         self.dZ3 = self.A3 - y_true
         self.dW3 = np.dot(self.A2.T, self.dZ3) / batch_size
@@ -270,6 +271,16 @@ class NeuralNetwork:
         assert self.dW3.shape == self.W3.shape
         assert self.db3.shape == self.b3.shape
 
+        #hidden layer 2
+        self.dA2 = np.dot(self.dZ3, self.W3.T)
+        self.dZ2 = self.dA2 * (self.Z2 > 0)
+        self.dW2 = np.dot(self.A1.T, self.dZ2) / batch_size
+        self.db2 = np.sum(self.dZ2, axis=0, keepdims=True) / batch_size
+
+        assert self.dA2.shape == self.A2.shape
+        assert self.dZ2.shape == self.Z2.shape
+        assert self.dW2.shape == self.W2.shape
+        assert self.db2.shape == self.b2.shape
 
 
 
@@ -327,16 +338,21 @@ def main():
     print(f"loss value: {loss:.6f}")
     """
 
-    print("Testing Output Layer Backpropagation\n")
+    print("Testing Output Layer backpropagation\n")
     test_batch = X_train[:5]
     test_labels = y_train[:5]
     predictions = model.forward(test_batch)
     loss = model.compute_loss(test_labels, predictions)
-    model.backward_output_layer(test_labels)
+    model.backward(test_labels)
     print(f"Loss : {loss:.6f}\n")
     print("dZ3 Shape :", model.dZ3.shape)
     print("dW3 Shape :", model.dW3.shape)
     print("db3 Shape :", model.db3.shape)
+    print("dA2 Shape :", model.dA2.shape)
+    print("dZ2 Shape :", model.dZ2.shape)
+    print("dW2 Shape :", model.dW2.shape)
+    print("db2 Shape :", model.db2.shape)
+
 
 if __name__ == "__main__":
     main()
