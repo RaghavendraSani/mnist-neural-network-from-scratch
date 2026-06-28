@@ -446,6 +446,28 @@ class NeuralNetwork:
 
         return accuracy
 
+    # TRAINING
+    def train_one_batch(self, X_batch, y_batch):
+        """
+        Train the network on a single batch of data.
+        """
+        predictions = self.forward(X_batch)
+        loss = self.compute_loss(y_batch, predictions)
+        self.backward(y_batch)
+        self.update_parameters()
+
+        assert np.all(np.isfinite(self.W1))
+        assert np.all(np.isfinite(self.W2))
+        assert np.all(np.isfinite(self.W3))
+        assert np.all(np.isfinite(self.b1))
+        assert np.all(np.isfinite(self.b2))
+        assert np.all(np.isfinite(self.b3))
+
+        assert np.isscalar(loss)
+        assert np.isfinite(loss)
+
+        return loss
+
 
 
 
@@ -569,7 +591,7 @@ def main():
     print("Expected Batch Size:", BATCH_SIZE)
     print("Actual Batch Size:", X_batch.shape[0])
     """
-
+    """
     print("Testing Prediction & Accuracy\n")
     test_batch = X_train[:10]
     test_labels = y_train[:10]
@@ -579,5 +601,18 @@ def main():
     print(predictions)
     print("\nPrediction Shape:", predictions.shape)
     print(f"\nAccuracy: {accuracy:.4f}")
+    """
+
+    print("Testing Train One Batch\n")
+    test_batch = X_train[:BATCH_SIZE]
+    test_labels = y_train[:BATCH_SIZE]
+    weight_before = model.W1.copy()
+    loss = model.train_one_batch(test_batch, test_labels)
+    weight_after = model.W1
+    print(f"Loss: {loss:.6f}")
+    print()
+    print("Weights Updated:",
+          not np.array_equal(weight_before, weight_after))
+
 if __name__ == "__main__":
     main()
