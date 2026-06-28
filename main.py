@@ -27,6 +27,12 @@ HIDDEN1_SIZE = 512
 HIDDEN2_SIZE = 512
 OUTPUT_SIZE = 10
 
+# OPTIMISER
+LEARNING_RATE = 0.001
+BETA1 = 0.9
+BETA2 = 0.999
+EPSILON = 1e-8
+
 
 # DATA PREPROCESSING
 def load_data():
@@ -163,6 +169,7 @@ class NeuralNetwork:
         Initialize the neural network.
         """
         self._initialize_weights()
+        self._initialise_adam()
 
     def _initialize_weights(self):
         """
@@ -196,6 +203,43 @@ class NeuralNetwork:
 
         print(f"W3 Shape : {self.W3.shape}")
         print(f"b3 Shape : {self.b3.shape}")
+
+    def _initialise_adam(self):
+        """
+        Initialise Adam optimiser state
+        """
+        #first moment estimates
+        self.mW1 = np.zeros_like(self.W1)
+        self.mW2 = np.zeros_like(self.W2)
+        self.mW3 = np.zeros_like(self.W3)
+        self.mb1 = np.zeros_like(self.b1)
+        self.mb2 = np.zeros_like(self.b2)
+        self.mb3 = np.zeros_like(self.b3)
+
+        #second moment estimates
+        self.vW1 = np.zeros_like(self.W1)
+        self.vW2 = np.zeros_like(self.W2)
+        self.vW3 = np.zeros_like(self.W3)
+        self.vb1 = np.zeros_like(self.b1)
+        self.vb2 = np.zeros_like(self.b2)
+        self.vb3 = np.zeros_like(self.b3)
+
+        #time step
+        self.t = 0
+
+        assert self.mW1.shape == self.W1.shape
+        assert self.mW2.shape == self.W2.shape
+        assert self.mW3.shape == self.W3.shape
+        assert self.mb1.shape == self.b1.shape
+        assert self.mb2.shape == self.b2.shape
+        assert self.mb3.shape == self.b3.shape
+        assert self.vW1.shape == self.W1.shape
+        assert self.vW2.shape == self.W2.shape
+        assert self.vW3.shape == self.W3.shape
+        assert self.vb1.shape == self.b1.shape
+        assert self.vb2.shape == self.b2.shape
+        assert self.vb3.shape == self.b3.shape
+
 
     # ACTIVATION FUNCTIONS
     def relu(self, x):
@@ -350,7 +394,7 @@ def main():
     print("Prediction shape: ", prediction.shape)
     print(f"loss value: {loss:.6f}")
     """
-
+    """
     print("Testing Output Layer backpropagation\n")
     test_batch = X_train[:5]
     test_labels = y_train[:5]
@@ -371,6 +415,16 @@ def main():
     print("dZ1 Shape :", model.dZ1.shape)
     print("dW1 Shape :", model.dW1.shape)
     print("db1 Shape :", model.db1.shape)
+    """
+
+    print("Testing Adam Initialization\n")
+    print("mW1 Shape:", model.mW1.shape)
+    print("vW1 Shape:", model.vW1.shape)
+    print("mW2 Shape:", model.mW2.shape)
+    print("vW2 Shape:", model.vW2.shape)
+    print("mW3 Shape:", model.mW3.shape)
+    print("vW3 Shape:", model.vW3.shape)
+    print("\nTime Step:", model.t)
 
 
 if __name__ == "__main__":
