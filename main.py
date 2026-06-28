@@ -303,7 +303,9 @@ class NeuralNetwork:
         """
         # prevent log(0)
         y_pred = np.clip(y_pred, 1e-15, 1 - 1e-15)
-        loss = -np.sum(y_true * np.log(y_pred)) / y_true.shape[0]
+        cross_entropy = -np.sum(y_true * np.log(y_pred)) / y_true.shape[0]
+        l2_loss = (np.sum(self.W1 ** 2) + np.sum(self.W2 ** 2) + np.sum(self.W3 ** 2))
+        loss = cross_entropy + L2_LAMBDA * l2_loss
 
         assert np.isscalar(loss), \
             "Loss should be a scalar."
