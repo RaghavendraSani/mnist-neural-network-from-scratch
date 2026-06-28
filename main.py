@@ -240,6 +240,23 @@ class NeuralNetwork:
 
         return self.A3
 
+    # LOSS FUNCTION
+    def compute_loss(self, y_true, y_pred):
+        """
+        Compute the loss of the network.
+        """
+        # prevent log(0)
+        y_pred = np.clip(y_pred, 1e-15, 1 - 1e-15)
+        loss = -np.sum(y_true * np.log(y_pred)) / y_true.shape[0]
+
+        assert np.isscalar(loss), \
+            "Loss should be a scalar."
+        assert loss >= 0, \
+            "Loss should be non-negative."
+
+        return loss
+
+
 
 
 # MAIN
@@ -259,7 +276,8 @@ def main():
     #print("Testing ReLU\n")
     #print("Input :", test_input)
     #print("Output:", model.relu(test_input))
-    
+    """
+    """
     softmax_output = model.softmax(test_input)
     assert np.all(softmax_output >= 0), \
         "Softmax produced negative probabilities."
@@ -272,7 +290,7 @@ def main():
     print("\nOutput:\n", softmax_output)
     print("\nRow Sum:", np.sum(softmax_output))
     """
-
+    """
     print("Testing forward propagation..\n")
     test_batch = X_train[:5]
     output = model.forward(test_batch)
@@ -282,7 +300,13 @@ def main():
     print(output[0])
     print("\nprobability sum:\n")
     print(np.sum(output[0]))
-
+    """
+    print("Testing loss function..\n")
+    test_batch = X_train[:5]
+    prediction = model.forward(test_batch)
+    loss = model.compute_loss(y_train[:5], prediction)
+    print("Prediction shape: ", prediction.shape)
+    print(f"loss value: {loss:.6f}")
 
 if __name__ == "__main__":
     main()
