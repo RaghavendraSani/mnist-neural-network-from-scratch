@@ -219,6 +219,7 @@ class NeuralNetwork:
         """
         Perform forward propagation through the network.
         """
+        self.X = X
         #Hidden layer 1
         self.Z1 = np.dot(X, self.W1) + self.b1
         self.A1 = self.relu(self.Z1)
@@ -281,6 +282,18 @@ class NeuralNetwork:
         assert self.dZ2.shape == self.Z2.shape
         assert self.dW2.shape == self.W2.shape
         assert self.db2.shape == self.b2.shape
+
+        #hidden layer 1
+        self.dA1 = np.dot(self.dZ2, self.W2.T)
+        self.dZ1 = self.dA1 * (self.Z1 > 0)
+        self.dW1 = np.dot(self.X.T, self.dZ1) / batch_size
+        self.db1 = np.sum(self.dZ1, axis=0, keepdims=True) / batch_size
+
+        assert self.dA1.shape == self.A1.shape
+        assert self.dZ1.shape == self.Z1.shape
+        assert self.dW1.shape == self.W1.shape
+        assert self.db1.shape == self.b1.shape
+
 
 
 
@@ -348,10 +361,16 @@ def main():
     print("dZ3 Shape :", model.dZ3.shape)
     print("dW3 Shape :", model.dW3.shape)
     print("db3 Shape :", model.db3.shape)
+    print()
     print("dA2 Shape :", model.dA2.shape)
     print("dZ2 Shape :", model.dZ2.shape)
     print("dW2 Shape :", model.dW2.shape)
     print("db2 Shape :", model.db2.shape)
+    print()
+    print("dA1 Shape :", model.dA1.shape)
+    print("dZ1 Shape :", model.dZ1.shape)
+    print("dW1 Shape :", model.dW1.shape)
+    print("db1 Shape :", model.db1.shape)
 
 
 if __name__ == "__main__":
