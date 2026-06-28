@@ -23,11 +23,8 @@ np.random.seed(RANDOM_SEED)
 
 # NETWORK ARCHITECTURE
 INPUT_SIZE = 784
-
 HIDDEN1_SIZE = 512
-
 HIDDEN2_SIZE = 512
-
 OUTPUT_SIZE = 10
 
 
@@ -200,9 +197,10 @@ class NeuralNetwork:
         print(f"W3 Shape : {self.W3.shape}")
         print(f"b3 Shape : {self.b3.shape}")
 
+    # ACTIVATION FUNCTIONS
     def relu(self, x):
         """
-            Apply the ReLU activation function.
+        Apply the ReLU activation function.
         """
         return np.maximum(0, x)
 
@@ -212,10 +210,35 @@ class NeuralNetwork:
         """
         #numerical stability
         x = x-np.max(x, axis=1, keepdims=True)
-        exp_vaslues = np.exp(x)
-        probabilities = exp_vaslues / np.sum(exp_vaslues, axis=1, keepdims=True)
+        exp_values = np.exp(x)
+        probabilities = exp_values / np.sum(exp_values, axis=1, keepdims=True)
         return probabilities
 
+    # FORWARD PROPAGATION
+    def forward(self, X):
+        """
+        Perform forward propagation through the network.
+        """
+        #Hidden layer 1
+        self.Z1 = np.dot(X, self.W1) + self.b1
+        self.A1 = self.relu(self.Z1)
+
+        #Hidden layer 2
+        self.Z2 = np.dot(self.A1, self.W2) + self.b2
+        self.A2 = self.relu(self.Z2)
+
+        #Output layer
+        self.Z3 = np.dot(self.A2, self.W3) + self.b3
+        self.A3 = self.softmax(self.Z3)
+
+        assert self.Z1.shape == (X.shape[0], HIDDEN1_SIZE)
+        assert self.Z2.shape == (X.shape[0], HIDDEN2_SIZE)
+        assert self.Z3.shape == (X.shape[0], OUTPUT_SIZE)
+        assert self.A1.shape == (X.shape[0], HIDDEN1_SIZE)
+        assert self.A2.shape == (X.shape[0], HIDDEN2_SIZE)
+        assert self.A3.shape == (X.shape[0], OUTPUT_SIZE)
+
+        return self.A3
 
 
 
@@ -231,24 +254,35 @@ def main():
     model = NeuralNetwork()
     print("Neural Network object created successfully.\n")
 
+    """"
     test_input = np.array([[2.0, 1.0, 0.1]])
     #print("Testing ReLU\n")
     #print("Input :", test_input)
     #print("Output:", model.relu(test_input))
-
+    
     softmax_output = model.softmax(test_input)
-
     assert np.all(softmax_output >= 0), \
         "Softmax produced negative probabilities."
     assert np.all(softmax_output <= 1), \
         "Softmax probabilities exceed 1."
     assert np.allclose(np.sum(softmax_output, axis=1), 1.0), \
         "Softmax probabilities do not sum to 1."
-
     print("Testing Softmax")
     print("Input:\n", test_input)
     print("\nOutput:\n", softmax_output)
     print("\nRow Sum:", np.sum(softmax_output))
+    """
+
+    print("Testing forward propagation..\n")
+    test_batch = X_train[:5]
+    output = model.forward(test_batch)
+    print("Input shape: ", test_batch.shape)
+    print("Output shape: ", output.shape)
+    print("\nFirst prediction:\n")
+    print(output[0])
+    print("\nprobability sum:\n")
+    print(np.sum(output[0]))
+
 
 if __name__ == "__main__":
     main()
