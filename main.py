@@ -256,6 +256,23 @@ class NeuralNetwork:
 
         return loss
 
+    # BACKPROPAGATION
+    def backward_output_layer(self, y_true):
+        """
+        Compute gradient of the output layer.
+        """
+        batch_size = y_true.shape[0]
+        self.dZ3 = self.A3 - y_true
+        self.dW3 = np.dot(self.A2.T, self.dZ3) / batch_size
+        self.db3 = np.sum(self.dZ3, axis=0, keepdims=True) / batch_size
+
+        assert self.dZ3.shape == self.A3.shape
+        assert self.dW3.shape == self.W3.shape
+        assert self.db3.shape == self.b3.shape
+
+
+
+
 
 
 
@@ -301,12 +318,25 @@ def main():
     print("\nprobability sum:\n")
     print(np.sum(output[0]))
     """
+    """
     print("Testing loss function..\n")
     test_batch = X_train[:5]
     prediction = model.forward(test_batch)
     loss = model.compute_loss(y_train[:5], prediction)
     print("Prediction shape: ", prediction.shape)
     print(f"loss value: {loss:.6f}")
+    """
+
+    print("Testing Output Layer Backpropagation\n")
+    test_batch = X_train[:5]
+    test_labels = y_train[:5]
+    predictions = model.forward(test_batch)
+    loss = model.compute_loss(test_labels, predictions)
+    model.backward_output_layer(test_labels)
+    print(f"Loss : {loss:.6f}\n")
+    print("dZ3 Shape :", model.dZ3.shape)
+    print("dW3 Shape :", model.dW3.shape)
+    print("db3 Shape :", model.db3.shape)
 
 if __name__ == "__main__":
     main()
