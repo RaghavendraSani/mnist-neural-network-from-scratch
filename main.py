@@ -46,10 +46,10 @@ def load_data():
 
     train_df = pd.read_csv(TRAIN_PATH)
     test_df = pd.read_csv(TEST_PATH)
-
+    """
     print(f"training dataset shape: {train_df.shape}")
     print(f"testing dataset shape: {test_df.shape}")
-
+    """
     return train_df, test_df
 
 def preprocess_data(train_df, test_df):
@@ -66,12 +66,12 @@ def preprocess_data(train_df, test_df):
     X_train = train_df.drop(columns=['ImageId', 'label']).to_numpy()
     #remove ImageId from test
     X_test = test_df.drop(columns=['ImageId']).to_numpy()
-
+    """
     print("data preprocessing cmpleted.\n")
     print(f"training features shape: {X_train.shape}")
     print(f"training labels shape: {y_train.shape}")
     print(f"testing features shape: {X_test.shape}")
-
+    """
     assert X_train.shape[1] == 784, "Training data must have 784 features."
     assert X_test.shape[1] == 784, "Testing data must have 784 features."
     assert len(X_train) == len(y_train), \
@@ -90,11 +90,11 @@ def normalise_data(X_train, X_test):
         "Training pixels are not normalized."
     assert X_test.min() >= 0.0 and X_test.max() <= 1.0, \
         "Testing pixels are not normalized."
-
+    """
     print("\nNormalizing data...\n")
     print(f"training pixel range: {X_train.min():.3f}, {X_train.max():.3f}")
     print(f"testing pixel range: {X_test.min():.3f}, {X_test.max():.3f}\n")
-
+    """
     return X_train, X_test
 
 def one_hot_encode(y, num_classes=10):
@@ -108,11 +108,11 @@ def one_hot_encode(y, num_classes=10):
         "Incorrect one-hot encoding shape."
     assert np.all(one_hot.sum(axis=1) == 1), \
         "Each one-hot vector must contain exactly one 1."
-
+    """
     print("One-Hot Encoding\n")
     print(f"Label Shape: {y.shape}")
     print(f"Encoded Shape: {one_hot.shape}\n")
-
+    """
     return one_hot
 
 def train_validation_split(X, y_labels, y_one_hot, validation_split=VALIDATION_SPLIT):
@@ -136,11 +136,11 @@ def train_validation_split(X, y_labels, y_one_hot, validation_split=VALIDATION_S
         "Training features and labels do not match."
     assert X_val.shape[0] == y_val.shape[0], \
         "Validation features and labels do not match."
-
+    """
     print("Train / Validation Split\n")
     print(f"Training Samples   : {len(X_train)}")
     print(f"Validation Samples : {len(X_val)}\n")
-
+    """
     return X_train, X_val,y_train, y_val, y_train_labels, y_val_labels
 
 def visualize_samples(X, y, num_images=NUM_SAMPLE_IMAGES):
@@ -184,33 +184,26 @@ class NeuralNetwork:
         """
         self.W1 = np.random.randn(INPUT_SIZE, HIDDEN1_SIZE) * np.sqrt(2 / INPUT_SIZE)
         self.b1 = np.zeros((1,HIDDEN1_SIZE))
-
         self.W2 = np.random.randn(HIDDEN1_SIZE, HIDDEN2_SIZE ) * np.sqrt(2 / HIDDEN1_SIZE)
         self.b2 = np.zeros((1, HIDDEN2_SIZE))
-
         self.W3 = np.random.randn(HIDDEN2_SIZE, OUTPUT_SIZE) * np.sqrt(2 / HIDDEN2_SIZE)
         self.b3 = np.zeros((1, OUTPUT_SIZE))
 
         assert self.W1.shape == (INPUT_SIZE, HIDDEN1_SIZE)
         assert self.b1.shape == (1, HIDDEN1_SIZE)
-
         assert self.W2.shape == (HIDDEN1_SIZE, HIDDEN2_SIZE)
         assert self.b2.shape == (1, HIDDEN2_SIZE)
-
         assert self.W3.shape == (HIDDEN2_SIZE, OUTPUT_SIZE)
         assert self.b3.shape == (1, OUTPUT_SIZE)
-
+        """
         print("\nHe Weight Initialization Complete.\n")
-
         print(f"W1 Shape : {self.W1.shape}")
         print(f"b1 Shape : {self.b1.shape}")
-
         print(f"W2 Shape : {self.W2.shape}")
         print(f"b2 Shape : {self.b2.shape}")
-
         print(f"W3 Shape : {self.W3.shape}")
         print(f"b3 Shape : {self.b3.shape}")
-
+        """
     def _initialise_adam(self):
         """
         Initialise Adam optimiser state
@@ -352,7 +345,7 @@ class NeuralNetwork:
         """
         self.t += 1
 
-        #first moments updates (momentum)
+        #first moment updates (momentum)
         self.mW1 = BETA1 * self.mW1 + (1 - BETA1) * self.dW1
         self.mb1 = BETA1 * self.mb1 + (1 - BETA1) * self.db1
         self.mW2 = BETA1 * self.mW2 + (1 - BETA1) * self.dW2
@@ -366,6 +359,43 @@ class NeuralNetwork:
         assert self.mb2.shape == self.b2.shape
         assert self.mW3.shape == self.W3.shape
         assert self.mb3.shape == self.b3.shape
+
+        #second moment updates (velocity)
+        self.vW1 = BETA2 * self.vW1 + (1 - BETA2) * (self.dW1 ** 2)
+        self.vb1 = BETA2 * self.vb1 + (1 - BETA2) * (self.db1 ** 2)
+        self.vW2 = BETA2 * self.vW2 + (1 - BETA2) * (self.dW2 ** 2)
+        self.vb2 = BETA2 * self.vb2 + (1 - BETA2) * (self.db2 ** 2)
+        self.vW3 = BETA2 * self.vW3 + (1 - BETA2) * (self.dW3 ** 2)
+        self.vb3 = BETA2 * self.vb3 + (1 - BETA2) * (self.db3 ** 2)
+
+        #bias correction
+        mW1_hat = self.mW1 / (1 - BETA1 ** self.t)
+        mb1_hat = self.mb1 / (1 - BETA1 ** self.t)
+        mW2_hat = self.mW2 / (1 - BETA1 ** self.t)
+        mb2_hat = self.mb2 / (1 - BETA1 ** self.t)
+        mW3_hat = self.mW3 / (1 - BETA1 ** self.t)
+        mb3_hat = self.mb3 / (1 - BETA1 ** self.t)
+        vW1_hat = self.vW1 / (1 - BETA2 ** self.t)
+        vb1_hat = self.vb1 / (1 - BETA2 ** self.t)
+        vW2_hat = self.vW2 / (1 - BETA2 ** self.t)
+        vb2_hat = self.vb2 / (1 - BETA2 ** self.t)
+        vW3_hat = self.vW3 / (1 - BETA2 ** self.t)
+        vb3_hat = self.vb3 / (1 - BETA2 ** self.t)
+
+        #parameter update
+        self.W1 -= self.learning_rate * mW1_hat / (np.sqrt(vW1_hat) + EPSILON)
+        self.b1 -= self.learning_rate * mb1_hat / (np.sqrt(vb1_hat) + EPSILON)
+        self.W2 -= self.learning_rate * mW2_hat / (np.sqrt(vW2_hat) + EPSILON)
+        self.b2 -= self.learning_rate * mb2_hat / (np.sqrt(vb2_hat) + EPSILON)
+        self.W3 -= self.learning_rate * mW3_hat / (np.sqrt(vW3_hat) + EPSILON)
+        self.b3 -= self.learning_rate * mb3_hat / (np.sqrt(vb3_hat) + EPSILON)
+
+        assert np.all(np.isfinite(self.W1))
+        assert np.all(np.isfinite(self.W2))
+        assert np.all(np.isfinite(self.W3))
+        assert np.all(np.isfinite(self.b1))
+        assert np.all(np.isfinite(self.b2))
+        assert np.all(np.isfinite(self.b3))
 
 
 
@@ -454,7 +484,7 @@ def main():
     print("vW3 Shape:", model.vW3.shape)
     print("\nTime Step:", model.t)
     """
-
+    """
     print("Testing Adam Momentum Update\n")
     test_batch = X_train[:5]
     test_labels = y_train[:5]
@@ -466,6 +496,20 @@ def main():
     print("\nAfter Update")
     print("mW1 Mean:", np.mean(model.mW1))
     print("\nTime Step:", model.t)
+    """
+
+    print("Testing Adam Optimizer\n")
+    test_batch = X_train[:5]
+    test_labels = y_train[:5]
+    weight_before = model.W1.copy()
+    model.forward(test_batch)
+    model.backward(test_labels)
+    model.update_parameters()
+    weight_after = model.W1
+    print("Weights Changed:",
+          not np.array_equal(weight_before, weight_after))
+    print("Time Step:", model.t)
+
 
 if __name__ == "__main__":
     main()
